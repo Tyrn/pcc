@@ -6,19 +6,8 @@
   (:gen-class)
   )
 
-(defn -main
-  "Parsing the Command Line and Giving Orders"
-  [& args]
-  (let [{:keys [options arguments errors summary]} (parse-opts args cli-options)]
-    ;; Handle help
-    (cond
-     (:help options) (println (usage summary))
-     )
-    )
-  )
-
 (defn usage [options-summary]
-  (->> ["usage: pcc [-h] [-s] [-t] [-p] [-u UNIFIED_NAME] [-r] [-g ALBUM_TAG]"
+  (->> ["usage: pcc [-h] [-t] [-p] [-u UNIFIED_NAME] [-r] [-g ALBUM_TAG]"
         "    [-b ALBUM_NUM]"
         "    src_dir dst_dir"
         ""
@@ -60,6 +49,17 @@
    ]
   )
 
-(-main
- "-h"
- )
+(defn -main
+  "Parsing the Command Line and Giving Orders"
+  [& args]
+  (let [{:keys [options arguments errors summary]} (parse-opts args cli-options)]
+    ;; Handle help
+    (cond
+     (:help options) (println (usage summary))
+     )
+    )
+  )
+
+;(-main
+; "-h"
+; )

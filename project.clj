@@ -1,4 +1,4 @@
-(defproject pcc "0.1.0-SNAPSHOT"
+(defproject pcc "clojure"
   :description "Player album loader"
   :url "https://github.com/Tyrn/pcc"
   :license {:name "GPLv3"
