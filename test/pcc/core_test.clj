@@ -22,3 +22,4 @@
 *parsed-args*
 (str-strip-numbers "ab2kk13vn18v")
 (str-strip-numbers ";lkjk2")
+(cmpv-int [4] [4 0])

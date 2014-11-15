@@ -68,6 +68,10 @@
 (defn cmpv-int
   "Compare vectors of integers using 'string semantics'"
   [vx vy]
+  (let [res (first (drop-while zero? (map compare vx vy)))
+        diffenence (- (count vx) (count vy))]
+     (if res res diffenence)
+    )
   )
 
 (defn cmpstr-naturally
@@ -78,7 +82,7 @@
   (let [num-x (str-strip-numbers str-x)
         num-y (str-strip-numbers str-y)]
      (if (and (not-empty num-x) (not-empty num-y))
-       (compare num-x num-y)
+       (cmpv-int num-x num-y)
        (compare str-x str-y)
       )
     )
@@ -88,7 +92,6 @@
   [root-x root-y]
   (let [x0 (root-x 0) y0 (root-y 0)
         xp (.getPath x0) yp (.getPath y0)]
-    (println xp yp)
     (cmpstr-naturally xp yp)
    )
   )
