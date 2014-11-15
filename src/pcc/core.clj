@@ -1,6 +1,7 @@
 (ns pcc.core
   "Player album loader"
   (:require [me.raynes.fs :as fs])
+  (:require [clojure.java.io :as io])
   (:require [clojure.string :as string])
   (:require [clojure.tools.cli :refer [parse-opts]])
   (:gen-class)
@@ -45,21 +46,55 @@
    ["-b" "--album-num ALBUM_NUM"
     "album (book) start number; 0...99"
     :default 0
-    :parse-fn #(Integer/parseInt %)]
+    :parse-fn #(Integer/parseInt %)
+    :validate [#(<= 0 % 99) "must be a number, 0...99"]]
    ]
+  )
+
+(defn cmpstr-naturally
+  "If both strings contain digits, returns
+  numerical comparison based on the filtered
+  digits, otherwise returns standard string comparison"
+  [str-x str-y]
+  (let [strip-digits (fn [s] (string/join (filter #(re-find #"\d" (str %)) s)))
+        num-x (strip-digits str-x)
+        num-y (strip-digits str-y)]
+     (if (or (string/blank? num-x) (string/blank? num-y))
+       (compare str-x str-y)
+       (compare (Integer/parseInt num-x) (Integer/parseInt num-y))
+      )
+    )
+  )
+
+(defn compare-roots
+  [root-x root-y]
+  (let [x0 (root-x 0) y0 (root-y 0)]
+    x0
+   )
+  )
+
+(defn build-album
+  "Copy source files to destination according
+  to command line options"
+  []
+  (let [{:keys [options arguments]} *parsed-args*
+        roots (fs/iterate-dir (arguments 0))
+        rsorted (sort compare roots)]
+     rsorted
+    )
   )
 
 (defn -main
   "Parsing the Command Line and Giving Orders"
   [& args]
-  (let [{:keys [options arguments errors summary]} (parse-opts args cli-options)]
+  (def ^:dynamic *parsed-args* (parse-opts args cli-options))
+  (let [{:keys [options arguments errors summary]} *parsed-args*]
     ;; Handle help
     (cond
+     (not (nil? errors)) (println errors)
+     (not= (count arguments) 2) (println (usage summary))
      (:help options) (println (usage summary))
+     :else (build-album)
      )
     )
   )
-
-;(-main
-; "-h"
-; )
