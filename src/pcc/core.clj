@@ -51,25 +51,45 @@
    ]
   )
 
+(defn str-strip-numbers
+  "Returns a vector of integer numbers,
+  embedded in a string"
+  [s]
+  (let [matcher (re-matcher #"\d+" s)]
+    (loop [match (re-find matcher) result []]
+      (if-not match
+        result
+        (recur (re-find matcher) (conj result (Integer/parseInt match)))
+        )
+      )
+    )
+  )
+
+(defn cmpv-int
+  "Compare vectors of integers using 'string semantics'"
+  [vx vy]
+  )
+
 (defn cmpstr-naturally
   "If both strings contain digits, returns
   numerical comparison based on the filtered
   digits, otherwise returns standard string comparison"
   [str-x str-y]
-  (let [strip-digits (fn [s] (string/join (filter #(re-find #"\d" (str %)) s)))
-        num-x (strip-digits str-x)
-        num-y (strip-digits str-y)]
-     (if (or (string/blank? num-x) (string/blank? num-y))
+  (let [num-x (str-strip-numbers str-x)
+        num-y (str-strip-numbers str-y)]
+     (if (and (not-empty num-x) (not-empty num-y))
+       (compare num-x num-y)
        (compare str-x str-y)
-       (compare (Integer/parseInt num-x) (Integer/parseInt num-y))
       )
     )
   )
 
-(defn compare-roots
+(defn compare-root
   [root-x root-y]
-  (let [x0 (root-x 0) y0 (root-y 0)]
-    x0
+  (let [x0 (root-x 0) y0 (root-y 0)
+        xp (.getPath x0) yp (.getPath y0)]
+    (println xp yp)
+    (cmpstr-naturally xp yp)
    )
   )
 
@@ -79,7 +99,8 @@
   []
   (let [{:keys [options arguments]} *parsed-args*
         roots (fs/iterate-dir (arguments 0))
-        rsorted (sort compare roots)]
+        rsorted (sort compare-root roots)
+        ]
      rsorted
     )
   )
