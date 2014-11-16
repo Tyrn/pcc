@@ -54,7 +54,7 @@
   )
 
 (defn str-strip-numbers
-  "Returns a vector of integer numbers,
+  "Returns a vector of integer numbers
   embedded in a string"
   [s]
   (let [matcher (re-matcher #"\d+" s)]
@@ -105,16 +105,39 @@
    )
   )
 
+(defn counter
+  "Provides a function returning next
+  consecutive integer, starting from seed"
+  [seed]
+  (let [x (atom (dec seed))]
+    #(do (reset! x (inc @x)) @x)
+   )
+  )
+
+(defn map-src-traverser
+  "Provides a map function for converting the fs/iterate-dir sequence
+  into the ammo belt sequence for the executive copier"
+  []
+  (let [file-cnt (counter 0) dir-cnt (counter 0)]
+    (fn [srcv]
+      "Function to be passed to map"
+      (let []
+        (conj srcv (dir-cnt))
+        )
+      )
+    )
+  )
+
 (defn build-album
   "Copy source files to destination according
   to command line options"
   []
-  (require 'pcc.core)
   (let [{:keys [options arguments]} *parsed-args*
         roots (fs/iterate-dir (arguments 0))
         rsorted (sort compare-root roots)
+        output (map (map-src-traverser) rsorted)
         ]
-     rsorted
+     output
     )
   )
 
