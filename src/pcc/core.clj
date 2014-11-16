@@ -4,8 +4,7 @@
   (:require [clojure.java.io :as io])
   (:require [clojure.string :as string])
   (:require [clojure.tools.cli :refer [parse-opts]])
-  (:gen-class)
-  )
+  (:gen-class))
 
 (declare ^:dynamic *parsed-args*)
 
@@ -30,9 +29,7 @@
         "optional arguments:"
         options-summary
         ""]
-       (string/join \newline)
-   )
-  )
+       (string/join \newline)))
 
 (def cli-options
   [["-h" "--help" "brief usage info"]
@@ -50,8 +47,7 @@
     :default 0
     :parse-fn #(Integer/parseInt %)
     :validate [#(<= 0 % 99) "must be a number, 0...99"]]
-   ]
-  )
+   ])
 
 (defn str-strip-numbers
   "Returns a vector of integer numbers
@@ -61,20 +57,12 @@
     (loop [match (re-find matcher) result []]
       (if-not match
         result
-        (recur (re-find matcher) (conj result (Integer/parseInt match)))
-        )
-      )
-    )
-  )
+        (recur (re-find matcher) (conj result (Integer/parseInt match)))))))
 
 (defn cmpv-int
   "Compares vectors of integers using 'string semantics'"
   [vx vy]
-  (let [res (first (drop-while zero? (map compare vx vy)))
-        diffenence (- (count vx) (count vy))]
-     (if res res diffenence)
-    )
-  )
+  (or (first (drop-while zero? (map compare vx vy))) (- (count vx) (count vy))))
 
 (defn cmpstr-naturally
   "If both strings contain digits, returns
@@ -90,10 +78,7 @@
         num-y (str-strip-numbers str-y)] ;; possibly empty
      (if (and (not-empty num-x) (not-empty num-y))
        (cmpv-int num-x num-y)
-       (compare str-x str-y)
-      )
-    )
-  )
+       (compare str-x str-y))))
 
 (defn compare-root
   "Compares two paths extracted from file objects
@@ -101,18 +86,14 @@
   [root-x root-y]
   (let [x0 (root-x 0) y0 (root-y 0) ;; Java file objects extracted
         xp (.getPath x0) yp (.getPath y0)] ;; paths extracted
-    (cmpstr-naturally xp yp)
-   )
-  )
+    (cmpstr-naturally xp yp)))
 
 (defn counter
   "Provides a function returning next
   consecutive integer, starting from seed"
   [seed]
   (let [x (atom (dec seed))]
-    #(do (reset! x (inc @x)) @x)
-   )
-  )
+    #(do (reset! x (inc @x)) @x)))
 
 (defn map-src-traverser
   "Provides a map function for converting the fs/iterate-dir sequence
@@ -122,11 +103,8 @@
     (fn [srcv]
       "Function to be passed to map"
       (let []
-        (conj srcv (dir-cnt))
-        )
-      )
-    )
-  )
+        ;(conj srcv (dir-cnt))
+        (vector (srcv 0) (srcv 2) (dir-cnt))))))
 
 (defn build-album
   "Copy source files to destination according
@@ -135,11 +113,8 @@
   (let [{:keys [options arguments]} *parsed-args*
         roots (fs/iterate-dir (arguments 0))
         rsorted (sort compare-root roots)
-        output (map (map-src-traverser) rsorted)
-        ]
-     output
-    )
-  )
+        output (map (map-src-traverser) rsorted)]
+     output))
 
 (defn -main
   "Parsing the Command Line and Giving Orders"
@@ -151,7 +126,4 @@
      (not (nil? errors)) (println errors)
      (not= (count arguments) 2) (println (usage summary))
      (:help options) (println (usage summary))
-     :else (build-album)
-     )
-    )
-  )
+     :else (build-album))))
