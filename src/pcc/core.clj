@@ -13,12 +13,12 @@
         "    [-b ALBUM_NUM]"
         "    src_dir dst_dir"
         ""
-        "pcc \"Procrustes\" MoBiL is a CLI utility for copying subtrees containing audio (mp3) files in sequence"
-        "(preorder of the source subtree, alphabetically sorted by default)."
+        "pcc \"Procrustes\" SmArT is a CLI utility for copying subtrees containing audio (mp3)"
+        "files in sequence (preorder of the source subtree, alphabetically sorted by default)."
         "The end result is a \"flattened\" copy of the source subtree. \"Flattened\" means"
-        "that only a namesake of the root source directory is created, where all the files get copied,"
-        "names prefixed with a serial number. Mp3 tags 'Title' and 'Track Number' get removed."
-        "Tag 'Album' can be replaced (or removed)."
+        "that only a namesake of the root source directory is created, where all the files get"
+        "copied to, names prefixed with a serial number. Mp3 tags 'Title' and 'Track Number'"
+        "get removed. Tag 'Album' can be replaced (or removed)."
         "The writing process is strictly sequential: either starting with the number one file,"
         "or in the reversed order. This can be important for some mobile devices."
         ""
@@ -50,7 +50,7 @@
 
 (defn str-strip-numbers
   "Returns a vector of integer numbers
-  embedded in a string"
+  embedded in a string argument"
   [s]
   (let [matcher (re-matcher #"\d+" s)]
     (loop [match (re-find matcher) result []]
@@ -118,7 +118,6 @@
 (defn -main
   "Parsing the Command Line and Giving Orders"
   [& args]
-  ;(use 'pcc.core)
   (def ^:dynamic *parsed-args* (parse-opts args cli-options))
   (let [{:keys [options arguments errors summary]} *parsed-args*]
     (cond
