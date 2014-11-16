@@ -7,6 +7,8 @@
   (:gen-class)
   )
 
+(declare ^:dynamic *parsed-args*)
+
 (defn usage [options-summary]
   (->> ["usage: pcc [-h] [-t] [-p] [-u UNIFIED_NAME] [-r] [-g ALBUM_TAG]"
         "    [-b ALBUM_NUM]"
@@ -38,7 +40,7 @@
    ["-p" "--drop-dst" "do not create destination directory"]
    ["-r" "--reverse" "write files in reverse order (time sequence)"]
    ["-u" "--unified-name UNIFIED_NAME"
-    "root substring for destination directory and file names"
+    "naming suggestion for destination directory and files"
     :default "default-name"]
    ["-g" "--album-tag ALBUM_TAG"
     "album tag name"
@@ -100,6 +102,7 @@
   "Copy source files to destination according
   to command line options"
   []
+  (require 'pcc.core)
   (let [{:keys [options arguments]} *parsed-args*
         roots (fs/iterate-dir (arguments 0))
         rsorted (sort compare-root roots)
@@ -111,6 +114,7 @@
 (defn -main
   "Parsing the Command Line and Giving Orders"
   [& args]
+  ;(use 'pcc.core)
   (def ^:dynamic *parsed-args* (parse-opts args cli-options))
   (let [{:keys [options arguments errors summary]} *parsed-args*]
     ;; Handle help
