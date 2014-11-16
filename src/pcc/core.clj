@@ -46,8 +46,7 @@
     "album (book) start number; 0...99"
     :default 0
     :parse-fn #(Integer/parseInt %)
-    :validate [#(<= 0 % 99) "must be a number, 0...99"]]
-   ])
+    :validate [#(<= 0 % 99) "must be a number, 0...99"]]])
 
 (defn str-strip-numbers
   "Returns a vector of integer numbers
