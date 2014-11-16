@@ -68,7 +68,7 @@
   )
 
 (defn cmpv-int
-  "Compare vectors of integers using 'string semantics'"
+  "Compares vectors of integers using 'string semantics'"
   [vx vy]
   (let [res (first (drop-while zero? (map compare vx vy)))
         diffenence (- (count vx) (count vy))]
@@ -78,11 +78,16 @@
 
 (defn cmpstr-naturally
   "If both strings contain digits, returns
-  numerical comparison based on the filtered
-  digits, otherwise returns standard string comparison"
+  numerical comparison based on the numeric
+  values embedded in the strings,
+  otherwise returns standard string comparison.
+  The idea of natural sort as opposed to standard
+  lexicographic sort is one of coping
+  with the possible absence of the leading zeros
+  in \"numbers\" of files or directories"
   [str-x str-y]
-  (let [num-x (str-strip-numbers str-x)
-        num-y (str-strip-numbers str-y)]
+  (let [num-x (str-strip-numbers str-x)  ;; building vectors of integers,
+        num-y (str-strip-numbers str-y)] ;; possibly empty
      (if (and (not-empty num-x) (not-empty num-y))
        (cmpv-int num-x num-y)
        (compare str-x str-y)
@@ -91,9 +96,11 @@
   )
 
 (defn compare-root
+  "Compares two paths extracted from file objects
+  stored as first elements of argument vectors"
   [root-x root-y]
-  (let [x0 (root-x 0) y0 (root-y 0)
-        xp (.getPath x0) yp (.getPath y0)]
+  (let [x0 (root-x 0) y0 (root-y 0) ;; Java file objects extracted
+        xp (.getPath x0) yp (.getPath y0)] ;; paths extracted
     (cmpstr-naturally xp yp)
    )
   )
@@ -117,7 +124,6 @@
   ;(use 'pcc.core)
   (def ^:dynamic *parsed-args* (parse-opts args cli-options))
   (let [{:keys [options arguments errors summary]} *parsed-args*]
-    ;; Handle help
     (cond
      (not (nil? errors)) (println errors)
      (not= (count arguments) 2) (println (usage summary))
