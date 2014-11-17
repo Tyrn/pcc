@@ -98,10 +98,18 @@
   (let [x (atom (dec seed))]
     #(do (reset! x (inc @x)) @x)))
 
+(defn drop-common-root
+  ""
+  [path-x path-y]
+  (let [sx (fs/split path-x)
+        sy (fs/split path-y)
+        trail (drop-while integer? (map #(if (zero? (compare % %2)) 0 %) sx sy))]
+    trail))
+
 (defn list-dir-groomed
-  "Returns a list of: (0) naturally sorted list of
-  directory file objects (1) naturally sorted list
-  of file objects. Function works on an unsotred list
+  "Returns a vector of: (0) naturally sorted list of
+  directory objects (1) naturally sorted list
+  of file objects. Function takes an unsotred list
   of objects"
   [dir-obj-list]
   (let [dirs (sort compare-fobj-path (filter #(not (fs/file? %)) dir-obj-list))
@@ -111,24 +119,16 @@
 (defn traverse-dir
   "Traverses the (source) directory, preorder"
   [src-dir]
-  (let [root-dir (io/file src-dir)
+  (let [{:keys [options arguments]} *parsed-args*
         [dirs files] (list-dir-groomed (fs/list-dir src-dir))
+
         dir-handler  (fn [dir-obj]
                        (traverse-dir (.getPath dir-obj)))
+
         file-handler (fn [file-obj]
                        (.getPath file-obj))]
-    (concat (map dir-handler dirs) (map file-handler files))))
 
-(defn map-src-traverser
-  "Provides a map function for converting the fs/iterate-dir sequence
-  into the ammo belt sequence for the executive copier"
-  []
-  (let [file-cnt (counter 0) dir-cnt (counter 0)]
-    (fn [srcv]
-      "Function to be passed to map"
-      (let []
-        ;(conj srcv (dir-cnt))
-        (vector (srcv 0) (srcv 2) (dir-cnt))))))
+    (concat (map dir-handler dirs) (map file-handler files))))
 
 (defn build-album
   "Copy source files to destination according

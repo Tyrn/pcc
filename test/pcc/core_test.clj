@@ -27,3 +27,4 @@
 (cmpv-int [4] [4 0])
 (fs/list-dir "/home/alexey/dir-src")
 (traverse-dir "/home/alexey/dir-src")
+(drop-common-root (fs/file "/home/alexey/dir-src") (fs/file"/home/alexey/dir-dst"))
