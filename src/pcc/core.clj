@@ -79,13 +79,17 @@
        (cmpv-int num-x num-y)
        (compare str-x str-y))))
 
+(defn compare-fobj-path
+  "Extracts and compares two paths from file obects"
+  [fobj-x fobj-y]
+  (let [xp (.getPath fobj-x) yp (.getPath fobj-y)] ;; paths extracted
+    (cmpstr-naturally xp yp)))
+
 (defn compare-root
   "Compares two paths extracted from file objects
   stored as first elements of argument vectors"
   [root-x root-y]
-  (let [x0 (root-x 0) y0 (root-y 0) ;; Java file objects extracted
-        xp (.getPath x0) yp (.getPath y0)] ;; paths extracted
-    (cmpstr-naturally xp yp)))
+  (compare-fobj-path (root-x 0) (root-y 0)))
 
 (defn counter
   "Provides a function returning next
@@ -93,6 +97,27 @@
   [seed]
   (let [x (atom (dec seed))]
     #(do (reset! x (inc @x)) @x)))
+
+(defn list-dir-groomed
+  "Returns a list of: (0) naturally sorted list of
+  directory file objects (1) naturally sorted list
+  of file objects. Function works on an unsotred list
+  of objects"
+  [dir-obj-list]
+  (let [dirs (sort compare-fobj-path (filter #(not (fs/file? %)) dir-obj-list))
+        files (sort compare-fobj-path (filter fs/file? dir-obj-list))]
+    (vector dirs files)))
+
+(defn traverse-dir
+  "Traverses the (source) directory, preorder"
+  [src-dir]
+  (let [root-dir (io/file src-dir)
+        [dirs files] (list-dir-groomed (fs/list-dir src-dir))
+        dir-handler  (fn [dir-obj]
+                       (traverse-dir (.getPath dir-obj)))
+        file-handler (fn [file-obj]
+                       (.getPath file-obj))]
+    (concat (map dir-handler dirs) (map file-handler files))))
 
 (defn map-src-traverser
   "Provides a map function for converting the fs/iterate-dir sequence
@@ -110,9 +135,7 @@
   to command line options"
   []
   (let [{:keys [options arguments]} *parsed-args*
-        roots (fs/iterate-dir (arguments 0))
-        rsorted (sort compare-root roots)
-        output (map (map-src-traverser) rsorted)]
+        output (traverse-dir (arguments 0))]
      output))
 
 (defn -main
