@@ -101,14 +101,6 @@
   (let [x (atom (dec seed))]
     #(do (reset! x (inc @x)) @x)))
 
-(defn drop-common-root
-  "Deprecated"
-  [path-x path-y]
-  (let [sx (fs/split path-x)
-        sy (fs/split path-y)
-        trail (drop-while integer? (map #(if (zero? (compare % %2)) 0 %) sx sy))]
-    trail))
-
 (defn list-dir-groomed
   "Returns a vector of: (0) naturally sorted list of
   directory objects (1) naturally sorted list
