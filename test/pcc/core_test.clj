@@ -22,9 +22,3 @@
  "/home/alexey/dir-dst"
  )
 *parsed-args*
-(str-strip-numbers "ab2kk13vn188v")
-(str-strip-numbers ";lkjk2")
-(cmpv-int [4] [4 0])
-(fs/list-dir "/home/alexey/dir-src")
-(traverse-dir "/home/alexey/dir-src")
-(drop-common-root (fs/file "/home/alexey/dir-src") (fs/file"/home/alexey/dir-dst"))

@@ -1,12 +1,15 @@
 (ns pcc.core
   "Player album loader"
   (:require [me.raynes.fs :as fs])
+  (:import java.io.File)
   (:require [clojure.java.io :as io])
   (:require [clojure.string :as string])
   (:require [clojure.tools.cli :refer [parse-opts]])
   (:gen-class))
 
 (declare ^:dynamic *parsed-args*)
+(def ^:dynamic *sys-sep* java.io.File/separator)
+(def ^:dynamic *nix-sep* "/")
 
 (defn usage [options-summary]
   (->> ["usage: pcc [-h] [-t] [-p] [-u UNIFIED_NAME] [-r] [-g ALBUM_TAG]"
@@ -99,7 +102,7 @@
     #(do (reset! x (inc @x)) @x)))
 
 (defn drop-common-root
-  ""
+  "Deprecated"
   [path-x path-y]
   (let [sx (fs/split path-x)
         sy (fs/split path-y)
@@ -116,17 +119,32 @@
         files (sort compare-fobj-path (filter fs/file? dir-obj-list))]
     (vector dirs files)))
 
+(defn drop-trail
+  "Drop the given character from the
+  argument string, if any"
+  [s, trailer]
+  (if (= (nth s (dec (count s))) (first trailer)) (apply str (take (dec (count s)) s)) s))
+
 (defn traverse-dir
   "Traverses the (source) directory, preorder"
-  [src-dir]
+  [src-dir dst-step]
   (let [{:keys [options arguments]} *parsed-args*
+        dst-root (arguments 1)
         [dirs files] (list-dir-groomed (fs/list-dir src-dir))
 
         dir-handler  (fn [dir-obj]
-                       (traverse-dir (.getPath dir-obj)))
+                       "Processes the current directory, source side;
+                       creates properly named destination directory, if necessary"
+                       (let [dir (.getPath dir-obj)
+                             step (str dst-step *nix-sep* (fs/base-name dir-obj))]
+                         (fs/mkdir (str dst-root step))
+                         (traverse-dir dir step)))
 
         file-handler (fn [file-obj]
-                       (.getPath file-obj))]
+                       "Copies the current file, properly named and tagged"
+                       (let [dst-path (str dst-root dst-step *nix-sep* (.getName file-obj))]
+                         (fs/copy file-obj (fs/file dst-path))
+                         dst-path))]
 
     (concat (map dir-handler dirs) (map file-handler files))))
 
@@ -135,8 +153,8 @@
   to command line options"
   []
   (let [{:keys [options arguments]} *parsed-args*
-        output (traverse-dir (arguments 0))]
-     output))
+        output (traverse-dir (arguments 0) "")]
+    output))
 
 (defn -main
   "Parsing the Command Line and Giving Orders"
