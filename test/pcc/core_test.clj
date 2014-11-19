@@ -23,6 +23,4 @@
  )
 *parsed-args*
 (delete-offspring "/home/alexey/dir-dst/")
-(doc list-dir-groomed)
-(zero-pad 2, 4)
-(drop-trail "/home/alexey/dir-dst" *nix-sep*)
+(fs/file ".")

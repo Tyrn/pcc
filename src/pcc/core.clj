@@ -142,7 +142,6 @@
   "Traverses the (source) directory, preorder"
   [src-dir dst-root dst-step]
   (let [{:keys [options arguments]} *parsed-args*
-        ;dst-root (drop-trail (arguments 1) *nix-sep*)
         [dirs files] (list-dir-groomed (fs/list-dir src-dir))
 
         dir-name-decorator  (fn [i name]
@@ -177,10 +176,11 @@
   to command line options"
   []
   (let [{:keys [options arguments]} *parsed-args*
-        arg-dst (drop-trail (arguments 1) *nix-sep*)
+        path-trimmer (fn [str] (.getPath (fs/file str)))
+        arg-dst (path-trimmer (arguments 1))
         ext-arg-dst (str arg-dst *nix-sep* "bravo")]
     (fs/mkdir ext-arg-dst)
-    (traverse-dir (drop-trail (arguments 0) *nix-sep*) ext-arg-dst  "")))
+    (traverse-dir (path-trimmer (arguments 0)) ext-arg-dst  "")))
 
 (defn -main
   "Parsing the Command Line and Giving Orders"
@@ -189,6 +189,13 @@
   (let [{:keys [options arguments errors summary]} *parsed-args*]
     (cond
      (not (nil? errors)) (println errors)
-     (not= (count arguments) 2) (println (usage summary))
      (:help options) (println (usage summary))
+     (not= (count arguments) 2) (println (usage summary))
      :else (build-album))))
+;;
+;;
+;;
+;; Editor breathing space: might be necessary :)
+;;
+;;
+;;
