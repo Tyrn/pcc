@@ -51,6 +51,23 @@
     :parse-fn #(Integer/parseInt %)
     :validate [#(<= 0 % 99) "must be a number, 0...99"]]])
 
+(defn delete-recursively [fname]
+  (let [func (fn [func f]
+               (when (.isDirectory f)
+                 (doseq [f2 (.listFiles f)]
+                   (func func f2)))
+               (clojure.java.io/delete-file f))]
+    (func func (clojure.java.io/file fname))))
+
+(defn delete-offspring
+  "Delete offspring of the directory
+  NB Not quite charming, but first
+  I have to grok delete-recursively (the scavenged one)"
+  [dir-name]
+  (let [offspring (fs/list-dir dir-name)]
+    (map #(delete-recursively (.getPath %)) offspring)
+    ))
+
 (defn str-strip-numbers
   "Returns a vector of integer numbers
   embedded in a string argument"
@@ -99,7 +116,7 @@
   consecutive integer, starting from seed"
   [seed]
   (let [x (atom (dec seed))]
-    #(do (reset! x (inc @x)) @x)))
+    #(swap! x inc)))
 
 (defn list-dir-groomed
   "Returns a vector of: (0) naturally sorted list of
@@ -121,7 +138,7 @@
   "Traverses the (source) directory, preorder"
   [src-dir dst-step]
   (let [{:keys [options arguments]} *parsed-args*
-        dst-root (arguments 1)
+        dst-root (drop-trail (arguments 1) *nix-sep*)
         [dirs files] (list-dir-groomed (fs/list-dir src-dir))
 
         dir-handler  (fn [dir-obj]
@@ -136,17 +153,17 @@
                        "Copies the current file, properly named and tagged"
                        (let [dst-path (str dst-root dst-step *nix-sep* (.getName file-obj))]
                          (fs/copy file-obj (fs/file dst-path))
+                         (println dst-path)
                          dst-path))]
 
-    (concat (map dir-handler dirs) (map file-handler files))))
+    (doall (concat (map dir-handler dirs) (map file-handler files)))))
 
 (defn build-album
   "Copy source files to destination according
   to command line options"
   []
-  (let [{:keys [options arguments]} *parsed-args*
-        output (traverse-dir (arguments 0) "")]
-    output))
+  (let [{:keys [arguments]} *parsed-args*]
+    (traverse-dir (drop-trail (arguments 0) *nix-sep*) "")))
 
 (defn -main
   "Parsing the Command Line and Giving Orders"

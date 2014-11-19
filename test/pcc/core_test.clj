@@ -18,7 +18,8 @@
  "-u AlfaName"
  "-g AlfaTag"
  "-b" "42"
- "/home/alexey/dir-src"
- "/home/alexey/dir-dst"
+ "/home/alexey/dir-src/"
+ "/home/alexey/dir-dst/"
  )
 *parsed-args*
+(delete-offspring "/home/alexey/dir-dst/")
