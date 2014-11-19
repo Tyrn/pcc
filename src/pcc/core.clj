@@ -60,13 +60,24 @@
     (func func (clojure.java.io/file fname))))
 
 (defn delete-offspring
-  "Delete offspring of the directory
+  "Deletes offspring of the directory
   NB Not quite charming, but first
   I have to grok delete-recursively (the scavenged one)"
   [dir-name]
   (let [offspring (fs/list-dir dir-name)]
-    (map #(delete-recursively (.getPath %)) offspring)
-    ))
+    (map #(delete-recursively (.getPath %)) offspring)))
+
+(defn zero-pad
+  "Returns i zero-padded to n"
+  [i n]
+  (format (str "%0" n "d") i))
+
+(defn counter
+  "Provides a function returning next
+  consecutive integer, starting from seed"
+  [seed]
+  (let [x (atom (dec seed))]
+    #(swap! x inc)))
 
 (defn str-strip-numbers
   "Returns a vector of integer numbers
@@ -111,13 +122,6 @@
   [root-x root-y]
   (compare-fobj-path (root-x 0) (root-y 0)))
 
-(defn counter
-  "Provides a function returning next
-  consecutive integer, starting from seed"
-  [seed]
-  (let [x (atom (dec seed))]
-    #(swap! x inc)))
-
 (defn list-dir-groomed
   "Returns a vector of: (0) naturally sorted list of
   directory objects (1) naturally sorted list
@@ -132,38 +136,51 @@
   "Drop the given character from the
   argument string, if any"
   [s, trailer]
-  (if (= (nth s (dec (count s))) (first trailer)) (apply str (take (dec (count s)) s)) s))
+  (if (= (nth s (dec (count s))) (first trailer)) (apply str (drop-last s)) s))
 
 (defn traverse-dir
   "Traverses the (source) directory, preorder"
-  [src-dir dst-step]
+  [src-dir dst-root dst-step]
   (let [{:keys [options arguments]} *parsed-args*
-        dst-root (drop-trail (arguments 1) *nix-sep*)
+        ;dst-root (drop-trail (arguments 1) *nix-sep*)
         [dirs files] (list-dir-groomed (fs/list-dir src-dir))
 
-        dir-handler  (fn [dir-obj]
+        dir-name-decorator  (fn [i name]
+                              (let []
+                                (str (zero-pad (inc i) 2) "-" name)))
+
+        file-name-decorator (fn [i name]
+                              (let []
+                                (str (zero-pad (inc i) 4) "-" name)))
+
+        dir-handler  (fn [i dir-obj]
                        "Processes the current directory, source side;
                        creates properly named destination directory, if necessary"
                        (let [dir (.getPath dir-obj)
-                             step (str dst-step *nix-sep* (fs/base-name dir-obj))]
+                             dir-name (fs/base-name dir-obj)
+                             step (str dst-step *nix-sep* (dir-name-decorator i dir-name))]
                          (fs/mkdir (str dst-root step))
-                         (traverse-dir dir step)))
+                         (traverse-dir dir dst-root step)))
 
-        file-handler (fn [file-obj]
+        file-handler (fn [i file-obj]
                        "Copies the current file, properly named and tagged"
-                       (let [dst-path (str dst-root dst-step *nix-sep* (.getName file-obj))]
+                       (let [file-name (.getName file-obj)
+                             dst-path (str dst-root dst-step *nix-sep* (file-name-decorator i file-name))]
                          (fs/copy file-obj (fs/file dst-path))
                          (println dst-path)
                          dst-path))]
 
-    (doall (concat (map dir-handler dirs) (map file-handler files)))))
+    (doall (concat(map-indexed dir-handler dirs) (map-indexed file-handler files)))))
 
 (defn build-album
   "Copy source files to destination according
   to command line options"
   []
-  (let [{:keys [arguments]} *parsed-args*]
-    (traverse-dir (drop-trail (arguments 0) *nix-sep*) "")))
+  (let [{:keys [options arguments]} *parsed-args*
+        arg-dst (drop-trail (arguments 1) *nix-sep*)
+        ext-arg-dst (str arg-dst *nix-sep* "bravo")]
+    (fs/mkdir ext-arg-dst)
+    (traverse-dir (drop-trail (arguments 0) *nix-sep*) ext-arg-dst  "")))
 
 (defn -main
   "Parsing the Command Line and Giving Orders"
