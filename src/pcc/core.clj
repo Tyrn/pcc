@@ -41,13 +41,13 @@
    ["-r" "--reverse" "write files in reverse order (time sequence)"]
    ["-u" "--unified-name UNIFIED_NAME"
     "naming suggestion for destination directory and files"
-    :default "default-name"]
+    :default nil]
    ["-g" "--album-tag ALBUM_TAG"
     "album tag name"
-    :default "default-tag"]
+    :default nil]
    ["-b" "--album-num ALBUM_NUM"
     "album (book) start number; 0...99"
-    :default 0
+    :default nil
     :parse-fn #(Integer/parseInt %)
     :validate [#(<= 0 % 99) "must be a number, 0...99"]]])
 
@@ -67,6 +67,12 @@
   (let [offspring (fs/list-dir dir-name)]
     (map #(delete-recursively (.getPath %)) offspring)))
 
+(defn drop-trail
+  "Drop the given character from the
+  argument string, if any"
+  [s, trailer]
+  (if (= (last s) (first trailer)) (apply str (drop-last s)) s))
+
 (defn zero-pad
   "Returns i zero-padded to n"
   [i n]
@@ -78,6 +84,13 @@
   [seed]
   (let [x (atom (dec seed))]
     #(swap! x inc)))
+
+(defn strip-file-ext
+  "Discard file extension
+  Incorrect! Should be the first dot
+  starting from the end of the line!"
+  [s]
+  (apply str (take-while #(not= % \.) s)))
 
 (defn str-strip-numbers
   "Returns a vector of integer numbers
@@ -114,7 +127,7 @@
   "Extracts and compares two paths from file obects"
   [fobj-x fobj-y]
   (let [xp (.getPath fobj-x) yp (.getPath fobj-y)] ;; paths extracted
-    (cmpstr-naturally xp yp)))
+    (cmpstr-naturally (strip-file-ext xp) (strip-file-ext yp))))
 
 (defn compare-root
   "Compares two paths extracted from file objects
@@ -132,44 +145,66 @@
         files (sort compare-fobj-path (filter fs/file? dir-obj-list))]
     (vector dirs files)))
 
-(defn drop-trail
-  "Drop the given character from the
-  argument string, if any"
-  [s, trailer]
-  (if (= (nth s (dec (count s))) (first trailer)) (apply str (drop-last s)) s))
-
 (defn traverse-dir
   "Traverses the (source) directory, preorder"
-  [src-dir dst-root dst-step]
-  (let [{:keys [options arguments]} *parsed-args*
+  [src-dir dst-root dst-step ffc]
+  (let [{:keys [options]} *parsed-args*
+        uname (:unified-name options)
         [dirs files] (list-dir-groomed (fs/list-dir src-dir))
 
-        dir-name-decorator  (fn [i name]
+       dir-name-decorator   (fn [i name]
                               (let []
-                                (str (zero-pad (inc i) 2) "-" name)))
+                                (str (zero-pad (inc i) 3) "-" name)))
 
-        file-name-decorator (fn [i name]
+       file-name-decorator  (fn [i name]
                               (let []
-                                (str (zero-pad (inc i) 4) "-" name)))
+                                (str (zero-pad (inc i) 4) "-" (if uname (str uname ".mp3") name))))
 
-        dir-handler  (fn [i dir-obj]
+       dir-tree-hnd  (fn [i dir-obj]
                        "Processes the current directory, source side;
-                       creates properly named destination directory, if necessary"
+                       creates properly named destination directory"
                        (let [dir (.getPath dir-obj)
                              dir-name (fs/base-name dir-obj)
                              step (str dst-step *nix-sep* (dir-name-decorator i dir-name))]
                          (fs/mkdir (str dst-root step))
-                         (traverse-dir dir dst-root step)))
+                         (traverse-dir dir dst-root step ffc)))
 
-        file-handler (fn [i file-obj]
+       dir-flat-hnd  (fn [i dir-obj]
+                       "Processes the current directory, source side;
+                       never creates any destination directories"
+                       (let [dir (.getPath dir-obj)
+                             dir-name (fs/base-name dir-obj)
+                             step (str dst-step *nix-sep* (dir-name-decorator i dir-name))]
+                         (fs/mkdir (str dst-root step))
+                         (traverse-dir dir dst-root step ffc)))
+
+       file-tree-hnd (fn [i file-obj]
                        "Copies the current file, properly named and tagged"
                        (let [file-name (.getName file-obj)
                              dst-path (str dst-root dst-step *nix-sep* (file-name-decorator i file-name))]
                          (fs/copy file-obj (fs/file dst-path))
                          (println dst-path)
-                         dst-path))]
+                         dst-path))
 
-    (doall (concat(map-indexed dir-handler dirs) (map-indexed file-handler files)))))
+       file-flat-hnd (fn [i file-obj]
+                       "Copies the current file, properly named and tagged"
+                       (let [file-name (.getName file-obj)
+                             dst-path (str dst-root dst-step *nix-sep* (file-name-decorator i file-name))]
+                         (fs/copy file-obj (fs/file dst-path))
+                         (println dst-path)
+                         dst-path))
+
+       file-handler  (fn []
+                       "Returns proper file handler according to options"
+                       (let []
+                         file-tree-hnd))
+
+       dir-handler   (fn []
+                       "Returns proper directory handler according to options"
+                       (let []
+                         dir-tree-hnd))]
+
+    (doall (concat(map-indexed (dir-handler) dirs) (map-indexed (file-handler) files))))) ;; traverse-dir
 
 (defn build-album
   "Copy source files to destination according
@@ -177,10 +212,19 @@
   []
   (let [{:keys [options arguments]} *parsed-args*
         path-trimmer (fn [str] (.getPath (fs/file str)))
+        uname (:unified-name options)
+        anum (:album-num options)
+        arg-src (path-trimmer (arguments 0))
+        src-name (fs/base-name (fs/file arg-src))
         arg-dst (path-trimmer (arguments 1))
-        ext-arg-dst (str arg-dst *nix-sep* "bravo")]
-    (fs/mkdir ext-arg-dst)
-    (traverse-dir (path-trimmer (arguments 0)) ext-arg-dst  "")))
+        base-dst (if anum
+                   (if uname
+                     (str (zero-pad anum 2) "-" uname)
+                     (str (zero-pad anum 2) "-" src-name))
+                   src-name)
+        executive-dst (str arg-dst *nix-sep* base-dst)]
+    (fs/mkdir executive-dst)
+    (traverse-dir arg-src executive-dst  "" (counter 0))))
 
 (defn -main
   "Parsing the Command Line and Giving Orders"

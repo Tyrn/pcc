@@ -15,10 +15,10 @@
 
 (-main
  "-r"
- "-u AlfaName"
- "-g AlfaTag"
- "-b" "42"
- "/home/alexey/dir-src/"
+; "-u" "AlfaName"
+ "-g" "AlfaTag"
+; "-b" "42"
+ "/home/alexey/dir-src1/"
  "/home/alexey/dir-dst/"
  )
 *parsed-args*
