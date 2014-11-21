@@ -15,7 +15,7 @@
  )
 
 (-main
-;  "-t"
+ "-t"
  "-r"
  "-p"
 ; "-u" "AlfaName"
