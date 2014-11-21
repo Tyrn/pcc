@@ -161,7 +161,7 @@
 
         dir-tree-hnd  (fn [i dir-obj]
                         "Processes the current directory, source side;
-                       creates properly named destination directory"
+                        creates properly named destination directory"
                         (let [dir (.getPath dir-obj)
                               dir-name (fs/base-name dir-obj)
                               step (str dst-step *nix-sep* (dir-name-decorator i dir-name))]
@@ -170,11 +170,9 @@
 
         dir-flat-hnd  (fn [i dir-obj]
                         "Processes the current directory, source side;
-                       never creates any destination directories"
+                        never creates any destination directories"
                         (let [dir (.getPath dir-obj)
                               dir-name (fs/base-name dir-obj)]
-
-                          ;(fs/mkdir (str dst-root step))
                           (traverse-dir dir dst-root "" ffc)))
 
         file-tree-hnd (fn [i file-obj]
