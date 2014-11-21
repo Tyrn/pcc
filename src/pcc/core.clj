@@ -86,11 +86,10 @@
     #(swap! x inc)))
 
 (defn strip-file-ext
-  "Discard file extension
-  Incorrect! Should be the first dot
-  starting from the end of the line!"
+  "Discard file extension"
   [s]
-  (apply str (take-while #(not= % \.) s)))
+  (let [[name ext] (fs/split-ext (fs/file s))]
+    (apply str (drop-last (count ext) s))))
 
 (defn str-strip-numbers
   "Returns a vector of integer numbers
@@ -152,59 +151,59 @@
         uname (:unified-name options)
         [dirs files] (list-dir-groomed (fs/list-dir src-dir))
 
-       dir-name-decorator   (fn [i name]
-                              (let []
-                                (str (zero-pad (inc i) 3) "-" name)))
+ 	      dir-name-decorator   (fn [i name]
+	                              (let []
+	                                (str (zero-pad (inc i) 3) "-" name)))
 
-       file-name-decorator  (fn [i name]
-                              (let []
-                                (str (zero-pad (inc i) 4) "-" (if uname (str uname ".mp3") name))))
+        file-name-decorator  (fn [i name]
+                               (let []
+                                 (str (zero-pad (inc i) 4) "-" (if uname (str uname ".mp3") name))))
 
-       dir-tree-hnd  (fn [i dir-obj]
-                       "Processes the current directory, source side;
+        dir-tree-hnd  (fn [i dir-obj]
+                        "Processes the current directory, source side;
                        creates properly named destination directory"
-                       (let [dir (.getPath dir-obj)
-                             dir-name (fs/base-name dir-obj)
-                             step (str dst-step *nix-sep* (dir-name-decorator i dir-name))]
-                         (fs/mkdir (str dst-root step))
-                         (traverse-dir dir dst-root step ffc)))
+                        (let [dir (.getPath dir-obj)
+                              dir-name (fs/base-name dir-obj)
+                              step (str dst-step *nix-sep* (dir-name-decorator i dir-name))]
+                          (fs/mkdir (str dst-root step))
+                          (traverse-dir dir dst-root step ffc)))
 
-       dir-flat-hnd  (fn [i dir-obj]
-                       "Processes the current directory, source side;
+        dir-flat-hnd  (fn [i dir-obj]
+                        "Processes the current directory, source side;
                        never creates any destination directories"
-                       (let [dir (.getPath dir-obj)
-                             dir-name (fs/base-name dir-obj)
-                             step (str dst-step *nix-sep* (dir-name-decorator i dir-name))]
-                         (fs/mkdir (str dst-root step))
-                         (traverse-dir dir dst-root step ffc)))
+                        (let [dir (.getPath dir-obj)
+                              dir-name (fs/base-name dir-obj)]
 
-       file-tree-hnd (fn [i file-obj]
-                       "Copies the current file, properly named and tagged"
-                       (let [file-name (.getName file-obj)
-                             dst-path (str dst-root dst-step *nix-sep* (file-name-decorator i file-name))]
-                         (fs/copy file-obj (fs/file dst-path))
-                         (println dst-path)
-                         dst-path))
+                          ;(fs/mkdir (str dst-root step))
+                          (traverse-dir dir dst-root "" ffc)))
 
-       file-flat-hnd (fn [i file-obj]
-                       "Copies the current file, properly named and tagged"
-                       (let [file-name (.getName file-obj)
-                             dst-path (str dst-root dst-step *nix-sep* (file-name-decorator i file-name))]
-                         (fs/copy file-obj (fs/file dst-path))
-                         (println dst-path)
-                         dst-path))
+        file-tree-hnd (fn [i file-obj]
+                        "Copies the current file, properly named and tagged"
+                        (let [file-name (.getName file-obj)
+                              dst-path (str dst-root dst-step *nix-sep* (file-name-decorator i file-name))]
+                          (fs/copy file-obj (fs/file dst-path))
+                          (println dst-path)
+                          dst-path))
 
-       file-handler  (fn []
-                       "Returns proper file handler according to options"
-                       (let []
-                         file-tree-hnd))
+        file-flat-hnd (fn [i file-obj]
+                        "Copies the current file, properly named and tagged"
+                        (let [file-name (.getName file-obj)
+                              dst-path (str dst-root dst-step *nix-sep* (file-name-decorator (ffc) file-name))]
+                          (fs/copy file-obj (fs/file dst-path))
+                          (println dst-path)
+                          dst-path))
 
-       dir-handler   (fn []
-                       "Returns proper directory handler according to options"
-                       (let []
-                         dir-tree-hnd))]
+        file-handler  (fn []
+                        "Returns proper file handler according to options"
+                        (let []
+                          (if (:tree-dst options) file-tree-hnd file-flat-hnd)))
 
-    (doall (concat(map-indexed (dir-handler) dirs) (map-indexed (file-handler) files))))) ;; traverse-dir
+        dir-handler   (fn []
+                        "Returns proper directory handler according to options"
+                        (let []
+                          (if (:tree-dst options) dir-tree-hnd dir-flat-hnd)))]
+
+    (doall (concat (map-indexed (dir-handler) dirs) (map-indexed (file-handler) files))))) ;; traverse-dir
 
 (defn build-album
   "Copy source files to destination according
@@ -222,8 +221,9 @@
                      (str (zero-pad anum 2) "-" uname)
                      (str (zero-pad anum 2) "-" src-name))
                    src-name)
-        executive-dst (str arg-dst *nix-sep* base-dst)]
-    (fs/mkdir executive-dst)
+        tail (if (:drop-dst options) "" (str *nix-sep* base-dst))
+        executive-dst (str arg-dst tail)]
+    (or (:drop-dst options) (fs/mkdir executive-dst))
     (traverse-dir arg-src executive-dst  "" (counter 0))))
 
 (defn -main
