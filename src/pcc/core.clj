@@ -152,8 +152,8 @@
         [dirs files] (list-dir-groomed (fs/list-dir src-dir))
 
         dir-name-decorator   (fn [i name]
-	                             (let []
-	                               (str (zero-pad (inc i) 3) "-" name)))
+                               (let []
+                                 (str (zero-pad (inc i) 3) "-" name)))
 
         file-name-decorator  (fn [i name]
                                (let []
