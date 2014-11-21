@@ -154,11 +154,11 @@
 
         dir-name-decorator   (fn [i name]
                                (let []
-                                 (str (zero-pad (inc i) 3) "-" name)))
+                                 (str (zero-pad i 3) "-" name)))
 
         file-name-decorator  (fn [i name]
                                (let []
-                                 (str (zero-pad (inc i) 4) "-" (if uname (str uname ".mp3") name))))
+                                 (str (zero-pad i 4) "-" (if uname (str uname ".mp3") name))))
 
         dir-tree-hnd  (fn [i dir-obj]
                         "Processes the current directory, source side;
@@ -223,7 +223,7 @@
         tail (if (:drop-dst options) "" (str *nix-sep* base-dst))
         executive-dst (str arg-dst tail)]
     (or (:drop-dst options) (fs/mkdir executive-dst))
-    (traverse-dir arg-src executive-dst  "" (counter 0))))
+    (traverse-dir arg-src executive-dst  "" (counter 1))))
 
 (defn -main
   "Parsing the Command Line and Giving Orders"
