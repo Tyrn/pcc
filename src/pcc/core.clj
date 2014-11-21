@@ -1,10 +1,11 @@
 (ns pcc.core
   "Player album loader"
-  (:require [me.raynes.fs :as fs])
   (:import java.io.File)
-  (:require [clojure.java.io :as io])
-  (:require [clojure.string :as string])
-  (:require [clojure.tools.cli :refer [parse-opts]])
+  (:require [me.raynes.fs :as fs]
+            [clojure.java.io :as io]
+            [clojure.string :as string]
+            [green-tags.core :as core]
+            [clojure.tools.cli :refer [parse-opts]])
   (:gen-class))
 
 (declare ^:dynamic *parsed-args*)
