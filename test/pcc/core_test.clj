@@ -31,3 +31,4 @@
 (core/get-fields "/home/alexey/dir-src1/12 Byzantine Rulers_ Reading Suggestions.mp3")
 (core/get-fields "/home/alexey/common/Downloads/UpDown/Books/Audio/48 Laws Of Power - Robert Greene/48 Laws Of Power CD 6.mp3")
 core/mp3-fields
+

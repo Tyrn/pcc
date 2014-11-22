@@ -129,12 +129,6 @@
   (let [xp (.getPath fobj-x) yp (.getPath fobj-y)] ;; paths extracted
     (cmpstr-naturally (strip-file-ext xp) (strip-file-ext yp))))
 
-(defn compare-root
-  "Compares two paths extracted from file objects
-  stored as first elements of argument vectors"
-  [root-x root-y]
-  (compare-fobj-path (root-x 0) (root-y 0)))
-
 (defn list-dir-groomed
   "Returns a vector of: (0) naturally sorted list of
   directory objects (1) naturally sorted list
