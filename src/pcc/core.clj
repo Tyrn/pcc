@@ -173,17 +173,16 @@
         file-tree-hnd (fn [i file-obj]
                         "Copies the current file, properly named and tagged"
                         (let [file-name (.getName file-obj)
-                              dst-path (str dst-root dst-step *nix-sep* (file-name-decorator i file-name))]
+                              rel-dst (str dst-step *nix-sep* (file-name-decorator i file-name))
+                              dst-path (str dst-root rel-dst)]
                           (fs/copy file-obj (fs/file dst-path))
-                          (println dst-path)
-                          dst-path))
+                          (vector (.getPath file-obj) dst-path)))
 
         file-flat-hnd (fn [i file-obj]
                         "Copies the current file, properly named and tagged"
                         (let [file-name (.getName file-obj)
                               dst-path (str dst-root dst-step *nix-sep* (file-name-decorator (ffc) file-name))]
                           (fs/copy file-obj (fs/file dst-path))
-                          (println dst-path)
                           dst-path))
 
         file-handler  (fn []
@@ -217,7 +216,15 @@
         tail (if (:drop-dst options) "" (str *nix-sep* base-dst))
         executive-dst (str arg-dst tail)]
     (or (:drop-dst options) (fs/mkdir executive-dst))
-    (traverse-dir arg-src executive-dst  "" (counter 0))))
+    (vector arg-src executive-dst (traverse-dir arg-src executive-dst  "" (counter 0)))))
+
+(defn copy-album
+  "Copy actual files in the reversed order
+  if requested, according to the file list
+  'ammo belt', set tags"
+  []
+  (let [[src dst & belt] (build-album)]
+    belt))
 
 (defn -main
   "Parsing the Command Line and Giving Orders"
@@ -228,7 +235,7 @@
      (not (nil? errors)) (println errors)
      (:help options) (println (usage summary))
      (not= (count arguments) 2) (println (usage summary))
-     :else (build-album))))
+     :else (copy-album))))
 ;;
 ;;
 ;;
