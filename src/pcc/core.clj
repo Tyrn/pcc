@@ -108,14 +108,10 @@
   (or (first (drop-while zero? (map compare vx vy))) (- (count vx) (count vy))))
 
 (defn cmpstr-naturally
-  "If both strings contain digits, returns
-  numerical comparison based on the numeric
-  values embedded in the strings,
-  otherwise returns standard string comparison.
-  The idea of natural sort as opposed to standard
-  lexicographic sort is one of coping
-  with the possible absence of the leading zeros
-  in \"numbers\" of files or directories"
+  "If both strings contain digits, returns numerical comparison based on the numeric
+  values embedded in the strings, otherwise returns the standard string comparison.
+  The idea of the natural sort as opposed to the standard lexicographic sort is one of coping
+  with the possible absence of the leading zeros in 'numbers' of files or directories"
   [str-x str-y]
   (let [num-x (str-strip-numbers str-x)  ;; building vectors of integers,
         num-y (str-strip-numbers str-y)] ;; possibly empty
@@ -126,8 +122,16 @@
 (defn compare-fobj-path
   "Extracts and compares two paths from file obects"
   [fobj-x fobj-y]
-  (let [xp (.getPath fobj-x) yp (.getPath fobj-y)] ;; paths extracted
+  (let [xp (.getPath fobj-x) yp (.getPath fobj-y)          ;; paths extracted
+        xn (fs/base-name fobj-x) yn (fs/base-name fobj-y)]
     (cmpstr-naturally (strip-file-ext xp) (strip-file-ext yp))))
+
+(defn compare-fobj-file
+  "Extracts and compares two paths from file obects, filenames only"
+  [fobj-x fobj-y]
+  (let [xp (.getPath fobj-x) yp (.getPath fobj-y)
+        xn (fs/base-name fobj-x) yn (fs/base-name fobj-y)] ;; names extracted
+    (cmpstr-naturally (strip-file-ext xn) (strip-file-ext yn))))
 
 (defn list-dir-groomed
   "Returns a vector of: (0) naturally sorted list of
@@ -135,8 +139,10 @@
   of file objects. Function takes an unsotred list
   of objects"
   [dir-obj-list]
+  ;; Different approach to sorting dirs and files is a necessity.
+  ;; Otherwise it won't work, thanks to the idea of the natural sort.
   (let [dirs (sort compare-fobj-path (filter #(not (fs/file? %)) dir-obj-list))
-        files (sort compare-fobj-path (filter fs/file? dir-obj-list))]
+        files (sort compare-fobj-file (filter fs/file? dir-obj-list))]
     (vector dirs files)))
 
 (defn traverse-dir
@@ -183,7 +189,7 @@
                         (let [file-name (.getName file-obj)
                               dst-path (str dst-root dst-step *nix-sep* (file-name-decorator (ffc) file-name))]
                           (fs/copy file-obj (fs/file dst-path))
-                          dst-path))
+                          (vector (.getPath file-obj) dst-path)))
 
         file-handler  (fn []
                         "Returns proper file handler according to options"
@@ -214,17 +220,35 @@
                      (str (zero-pad anum 2) "-" src-name))
                    src-name)
         tail (if (:drop-dst options) "" (str *nix-sep* base-dst))
-        executive-dst (str arg-dst tail)]
+        executive-dst (str arg-dst tail)
+        file-counter (counter 0)]
     (or (:drop-dst options) (fs/mkdir executive-dst))
-    (vector arg-src executive-dst (traverse-dir arg-src executive-dst  "" (counter 0)))))
+    (vector arg-src executive-dst file-counter (traverse-dir arg-src executive-dst  "" file-counter))))
 
 (defn copy-album
   "Copy actual files in the reversed order
   if requested, according to the file list
   'ammo belt', set tags"
   []
-  (let [[src dst & belt] (build-album)]
-    belt))
+  (let [[src dst fcnt & belt] (build-album)
+        {:keys [options]} *parsed-args*
+
+        file-count (fcnt)
+        flat-belt (flatten belt)
+        ready-belt (->> flat-belt (partition 2) (map vec))
+
+        tag-map (fn [i]
+                  (if (:album-tag options)
+                    {:track (str (inc i)) :track-total (str file-count) :album (:album-tag options)}
+                    {:track (str (inc i)) :track-total (str file-count)}))
+
+        track-numberer (fn [i entry]
+                         "setting Track tags"
+                         (let [[_ dst] entry]
+                           (core/update-tag! dst (tag-map i))))]
+
+    (doall (map-indexed track-numberer ready-belt))
+    ready-belt))
 
 (defn -main
   "Parsing the Command Line and Giving Orders"
