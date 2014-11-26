@@ -142,7 +142,14 @@
   ;; Different approach to sorting dirs and files is a necessity.
   ;; Otherwise it won't work, thanks to the idea of the natural sort.
   (let [dirs (sort compare-fobj-path (filter #(not (fs/file? %)) dir-obj-list))
-        files (sort compare-fobj-file (filter fs/file? dir-obj-list))]
+
+        audio-file?   (fn [file-obj]
+                        "Audio file to be copied
+                        NB Not quite correct detection by extension"
+                        (and (fs/file? file-obj) (= (string/upper-case (fs/extension file-obj)) ".MP3")))
+
+        files (sort compare-fobj-file (filter audio-file? dir-obj-list))]
+
     (vector dirs files)))
 
 (defn traverse-dir
