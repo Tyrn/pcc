@@ -52,13 +52,21 @@
     :parse-fn #(Integer/parseInt %)
     :validate [#(<= 0 % 99) "must be a number, 0...99"]]])
 
-(defn delete-recursively [fname]
+(defn delete-recur [fname]
   (let [func (fn [func f]
                (when (.isDirectory f)
                  (doseq [f2 (.listFiles f)]
                    (func func f2)))
                (clojure.java.io/delete-file f))]
     (func func (clojure.java.io/file fname))))
+
+(defn delete-recursively [fname]
+  (letfn [(func [f]
+                (when (.isDirectory f)
+                  (doseq [f2 (.listFiles f)]
+                    (func f2)))
+                (clojure.java.io/delete-file f))]
+    (func (clojure.java.io/file fname))))
 
 (defn delete-offspring
   "Deletes offspring of the directory
