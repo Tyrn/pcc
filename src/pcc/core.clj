@@ -13,7 +13,7 @@
 (def ^:dynamic *nix-sep* "/")
 
 (defn usage [options-summary]
-  (->> ["usage: pcc [-h] [-t] [-p] [-u UNIFIED_NAME] [-r] [-g ALBUM_TAG]"
+  (->> ["usage: pcc [-h] [-t] [-p] [-u UNIFIED_NAME] [-g ALBUM_TAG]"
         "    [-b ALBUM_NUM]"
         "    src_dir dst_dir"
         ""
@@ -39,7 +39,7 @@
   [["-h" "--help" "brief usage info"]
    ["-t" "--tree-dst" "copy as tree: keep source tree structure at destination"]
    ["-p" "--drop-dst" "do not create destination directory"]
-   ["-r" "--reverse" "write files in reverse order (time sequence)"]
+   ;["-r" "--reverse" "write files in reverse order (time sequence)"]
    ["-u" "--unified-name UNIFIED_NAME"
     "naming suggestion for destination directory and files"
     :default nil]
