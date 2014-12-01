@@ -52,14 +52,6 @@
     :parse-fn #(Integer/parseInt %)
     :validate [#(<= 0 % 99) "must be a number, 0...99"]]])
 
-(defn delete-recur [fname]
-  (let [func (fn [func f]
-               (when (.isDirectory f)
-                 (doseq [f2 (.listFiles f)]
-                   (func func f2)))
-               (clojure.java.io/delete-file f))]
-    (func func (clojure.java.io/file fname))))
-
 (defn delete-recursively [fname]
   (letfn [(func [f]
                 (when (.isDirectory f)
@@ -76,12 +68,6 @@
   (let [offspring (fs/list-dir dir-name)]
     (map #(delete-recursively (.getPath %)) offspring)))
 
-(defn drop-trail
-  "Drop the given character from the
-  argument string, if any"
-  [s, trailer]
-  (if (= (last s) (first trailer)) (apply str (drop-last s)) s))
-
 (defn zero-pad
   "Returns i zero-padded to n"
   [i n]
@@ -97,7 +83,7 @@
 (defn strip-file-ext
   "Discard file extension"
   [s]
-  (let [[name ext] (fs/split-ext (fs/file s))]
+  (let [[_ ext] (fs/split-ext (fs/file s))]
     (apply str (drop-last (count ext) s))))
 
 (defn str-strip-numbers
@@ -130,15 +116,13 @@
 (defn compare-fobj-path
   "Extracts and compares two paths from file obects"
   [fobj-x fobj-y]
-  (let [xp (.getPath fobj-x) yp (.getPath fobj-y)          ;; paths extracted
-        xn (fs/base-name fobj-x) yn (fs/base-name fobj-y)]
+  (let [xp (.getPath fobj-x) yp (.getPath fobj-y)]          ;; paths extracted
     (cmpstr-naturally (strip-file-ext xp) (strip-file-ext yp))))
 
 (defn compare-fobj-file
   "Extracts and compares two paths from file obects, filenames only"
   [fobj-x fobj-y]
-  (let [xp (.getPath fobj-x) yp (.getPath fobj-y)
-        xn (fs/base-name fobj-x) yn (fs/base-name fobj-y)] ;; names extracted
+  (let [xn (fs/base-name fobj-x) yn (fs/base-name fobj-y)] ;; names extracted
     (cmpstr-naturally (strip-file-ext xn) (strip-file-ext yn))))
 
 (defn list-dir-groomed
@@ -160,7 +144,7 @@
 
     (vector dirs files)))
 
-(defn traverse-dir
+(defn- traverse-dir
   "Traverses the (source) directory, preorder"
   [src-dir dst-root dst-step ffc!]
   (let [{:keys [options]} *parsed-args*
@@ -219,7 +203,7 @@
 
     (doall (concat (map-indexed (dir-handler) dirs) (map-indexed (file-handler) files))))) ;; traverse-dir
 
-(defn build-album
+(defn- build-album
   "Copy source files to destination according
   to command line options"
   []
@@ -242,7 +226,7 @@
     (or (:drop-dst options) (fs/mkdir executive-dst))
     (vector arg-src executive-dst file-counter (traverse-dir arg-src executive-dst  "" file-counter))))
 
-(defn copy-album
+(defn- copy-album
   "Copy actual files in the reversed order
   if requested, according to the file list
   'ammo belt', set tags"
@@ -251,33 +235,27 @@
         {:keys [options]} *parsed-args*
 
         file-count (fcnt!)
-        flat-belt (flatten belt)
-        ready-belt (->> flat-belt (partition 2) (map vec))
+        ready-belt (->> (flatten belt) (partition 2) (map vec))
 
         tag-map (fn [i]
                   (if (:album-tag options)
                     {:track (str (inc i)) :track-total (str file-count) :album (:album-tag options)}
                     {:track (str (inc i)) :track-total (str file-count)}))
 
-        file-copier         (fn [i entry]
-                              "setting Track tags"
+        file-copy-n-print   (fn [entry tags]
                               (let [[src dst] entry]
                                 (fs/copy (fs/file src) (fs/file dst))
-                                (core/update-tag! dst (tag-map i))
-                                (println dst)))
+                                (core/update-tag! dst tags)
+                                (println (:track tags) "/" (:track-total tags) " " dst)
+                                entry))
 
-        reverse-file-copier (fn [i entry]
-                              "setting Track tags"
-                              (let [[src dst] entry]
-                                (fs/copy (fs/file src) (fs/file dst))
-                                (core/update-tag! dst (tag-map (- file-count i 1)))
-                                (println dst)))]
+        file-copier         (fn [i entry] (file-copy-n-print entry (tag-map i)))
 
-    (if-not (:reverse options)
-      (doall (map-indexed file-copier ready-belt))
-      (doall (map-indexed reverse-file-copier (reverse ready-belt))))
+        reverse-file-copier (fn [i entry] (file-copy-n-print entry (tag-map (- file-count i 1))))]
 
-    ready-belt))
+    (if (:reverse options)
+      (doall (map-indexed reverse-file-copier (reverse ready-belt)))
+      (doall (map-indexed file-copier ready-belt)))))
 
 (defn -main
   "Parsing the Command Line and Giving Orders"

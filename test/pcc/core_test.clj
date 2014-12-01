@@ -13,7 +13,7 @@
 ;(-main "-h")
 
 (-main
-; "-t"
+ "-t"
  "-r"
  "-p"
 ; "-u" "AlfaName"
