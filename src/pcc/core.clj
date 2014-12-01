@@ -246,7 +246,9 @@
                               (let [[src dst] entry]
                                 (fs/copy (fs/file src) (fs/file dst))
                                 (core/update-tag! dst tags)
-                                (println (:track tags) "/" (:track-total tags) " " dst)
+                                (println (format "%4d/%-4d %s"
+                                        (Integer/parseInt (:track tags))
+                                        (Integer/parseInt (:track-total tags)) dst))
                                 entry))
 
         file-copier         (fn [i entry] (file-copy-n-print entry (tag-map i)))
