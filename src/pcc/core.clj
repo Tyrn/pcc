@@ -13,7 +13,7 @@
 (def ^:dynamic *nix-sep* "/")
 
 (defn usage [options-summary]
-  (->> ["usage: pcc [-h] [-t] [-p] [-u UNIFIED_NAME] [-g ALBUM_TAG]"
+  (->> ["usage: pcc [-h] [-t] [-p] [-r] [-u UNIFIED_NAME] [-g ALBUM_TAG]"
         "    [-b ALBUM_NUM]"
         "    src_dir dst_dir"
         ""
@@ -39,7 +39,7 @@
   [["-h" "--help" "brief usage info"]
    ["-t" "--tree-dst" "copy as tree: keep source tree structure at destination"]
    ["-p" "--drop-dst" "do not create destination directory"]
-   ;["-r" "--reverse" "write files in reverse order (time sequence)"]
+   ["-r" "--reverse" "write files in reverse order (time sequence)"]
    ["-u" "--unified-name UNIFIED_NAME"
     "naming suggestion for destination directory and files"
     :default nil]
@@ -162,7 +162,7 @@
 
 (defn traverse-dir
   "Traverses the (source) directory, preorder"
-  [src-dir dst-root dst-step ffc]
+  [src-dir dst-root dst-step ffc!]
   (let [{:keys [options]} *parsed-args*
         uname (:unified-name options)
         [dirs files] (list-dir-groomed (fs/list-dir src-dir))
@@ -182,28 +182,29 @@
                               dir-name (fs/base-name dir-obj)
                               step (str dst-step *nix-sep* (dir-name-decorator i dir-name))]
                           (fs/mkdir (str dst-root step))
-                          (traverse-dir dir dst-root step ffc)))
+                          (traverse-dir dir dst-root step ffc!)))
 
         dir-flat-hnd  (fn [i dir-obj]
                         "Processes the current directory, source side;
                         never creates any destination directories"
                         (let [dir (.getPath dir-obj)
                               dir-name (fs/base-name dir-obj)]
-                          (traverse-dir dir dst-root "" ffc)))
+                          (traverse-dir dir dst-root "" ffc!)))
 
         file-tree-hnd (fn [i file-obj]
                         "Copies the current file, properly named and tagged"
                         (let [file-name (.getName file-obj)
                               rel-dst (str dst-step *nix-sep* (file-name-decorator i file-name))
                               dst-path (str dst-root rel-dst)]
-                          (fs/copy file-obj (fs/file dst-path))
+                          ;(fs/copy file-obj (fs/file dst-path))
+                          (ffc!)
                           (vector (.getPath file-obj) dst-path)))
 
         file-flat-hnd (fn [i file-obj]
                         "Copies the current file, properly named and tagged"
                         (let [file-name (.getName file-obj)
-                              dst-path (str dst-root dst-step *nix-sep* (file-name-decorator (ffc) file-name))]
-                          (fs/copy file-obj (fs/file dst-path))
+                              dst-path (str dst-root dst-step *nix-sep* (file-name-decorator (ffc!) file-name))]
+                          ;(fs/copy file-obj (fs/file dst-path))
                           (vector (.getPath file-obj) dst-path)))
 
         file-handler  (fn []
@@ -237,6 +238,7 @@
         tail (if (:drop-dst options) "" (str *nix-sep* base-dst))
         executive-dst (str arg-dst tail)
         file-counter (counter 0)]
+
     (or (:drop-dst options) (fs/mkdir executive-dst))
     (vector arg-src executive-dst file-counter (traverse-dir arg-src executive-dst  "" file-counter))))
 
@@ -245,10 +247,10 @@
   if requested, according to the file list
   'ammo belt', set tags"
   []
-  (let [[src dst fcnt & belt] (build-album)
+  (let [[src dst fcnt! & belt] (build-album)
         {:keys [options]} *parsed-args*
 
-        file-count (fcnt)
+        file-count (fcnt!)
         flat-belt (flatten belt)
         ready-belt (->> flat-belt (partition 2) (map vec))
 
@@ -257,12 +259,24 @@
                     {:track (str (inc i)) :track-total (str file-count) :album (:album-tag options)}
                     {:track (str (inc i)) :track-total (str file-count)}))
 
-        track-numberer (fn [i entry]
-                         "setting Track tags"
-                         (let [[_ dst] entry]
-                           (core/update-tag! dst (tag-map i))))]
+        file-copier         (fn [i entry]
+                              "setting Track tags"
+                              (let [[src dst] entry]
+                                (fs/copy (fs/file src) (fs/file dst))
+                                (core/update-tag! dst (tag-map i))
+                                (println dst)))
 
-    (doall (map-indexed track-numberer ready-belt))
+        reverse-file-copier (fn [i entry]
+                              "setting Track tags"
+                              (let [[src dst] entry]
+                                (fs/copy (fs/file src) (fs/file dst))
+                                (core/update-tag! dst (tag-map (- file-count i 1)))
+                                (println dst)))]
+
+    (if-not (:reverse options)
+      (doall (map-indexed file-copier ready-belt))
+      (doall (map-indexed reverse-file-copier (reverse ready-belt))))
+
     ready-belt))
 
 (defn -main

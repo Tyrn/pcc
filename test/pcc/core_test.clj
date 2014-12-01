@@ -19,7 +19,7 @@
 ; "-u" "AlfaName"
  "-g" "On death and Dying"
 ; "-b" "42"
- "/home/alexey/dir-src/"
+ "/home/alexey/dir-src1/"
  "/home/alexey/dir-dst/"
  )
 *parsed-args*
