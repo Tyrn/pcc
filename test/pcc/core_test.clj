@@ -13,11 +13,12 @@
 ;(-main "-h")
 
 (-main
- "-t"
- "-r"
+; "-t"
+; "-r"
  "-p"
 ; "-u" "AlfaName"
  "-g" "On death and Dying"
+ "-a" "GySgt Hathcock"
 ; "-b" "42"
  "/home/alexey/dir-src1/"
  "/home/alexey/dir-dst/"
@@ -28,6 +29,5 @@
 ;(core/get-all-info "/home/alexey/dir-src1/12 Byzantine Rulers_ Reading Suggestions.mp3")
 ;(core/get-fields "/home/alexey/common/Downloads/UpDown/Books/Audio/48 Laws Of Power - Robert Greene/48 Laws Of Power CD 6.mp3")
 ;core/mp3-fields
-;(core/update-tag!
 ; "/home/alexey/dir-dst/0023-12 Byzantine Rulers_ Part 16 - Constantine XI.mp3"
 ; {:track "23" :track-total "24"})

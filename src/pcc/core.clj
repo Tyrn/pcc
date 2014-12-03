@@ -13,8 +13,9 @@
 (def ^:dynamic *nix-sep* "/")
 
 (defn usage [options-summary]
-  (->> ["usage: pcc [-h] [-t] [-p] [-r] [-u UNIFIED_NAME] [-g ALBUM_TAG]"
-        "    [-b ALBUM_NUM]"
+  (->> ["usage: pcc [-h] [-t] [-p] [-r] [-u UNIFIED_NAME] [-b ALBUM_NUM]"
+        "    [-a ARTIST_TAG]"
+        "    [-g ALBUM_TAG]"
         "    src_dir dst_dir"
         ""
         "pcc \"Procrustes\" SmArT is a CLI utility for copying subtrees containing audio (mp3)"
@@ -43,14 +44,17 @@
    ["-u" "--unified-name UNIFIED_NAME"
     "naming suggestion for destination directory and files"
     :default nil]
-   ["-g" "--album-tag ALBUM_TAG"
-    "album tag name"
-    :default nil]
    ["-b" "--album-num ALBUM_NUM"
     "album (book) start number; 0...99"
     :default nil
     :parse-fn #(Integer/parseInt %)
-    :validate [#(<= 0 % 99) "must be a number, 0...99"]]])
+    :validate [#(<= 0 % 99) "must be a number, 0...99"]]
+   ["-a" "--artist-tag ARTIST_TAG"
+    "artist tag name"
+    :default nil]
+   ["-g" "--album-tag ALBUM_TAG"
+    "album tag name"
+    :default nil]])
 
 (defn delete-recursively [fname]
   (letfn [(func [f]
@@ -237,10 +241,11 @@
         file-count (fcnt!)
         ready-belt (->> (flatten belt) (partition 2) (map vec))
 
-        tag-map (fn [i]
-                  (if (:album-tag options)
-                    {:track (str (inc i)) :track-total (str file-count) :album (:album-tag options)}
-                    {:track (str (inc i)) :track-total (str file-count)}))
+        const-tags (merge {:track-total (str file-count)}
+                          (if (:album-tag options) {:album (:album-tag options)})
+                          (if (:artist-tag options) {:artist (:artist-tag options)}))
+
+        tag-map (fn [i] (merge {:track (str (inc i))} const-tags))
 
         file-copy-n-print   (fn [entry tags]
                               (let [[src dst] entry]
