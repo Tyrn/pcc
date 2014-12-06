@@ -9,4 +9,5 @@
                  [green-tags "0.3.0-alpha"]]
   :main ^:skip-aot pcc.core
   :target-path "target/%s"
-  :profiles {:uberjar {:aot :all}})
+  :profiles {:uberjar {:aot :all}
+             :dev {:dependencies [[midje "1.6.3"]]}})

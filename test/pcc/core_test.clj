@@ -4,30 +4,22 @@
             [clojure.string :as string]
             [green-tags.core :as core]
             [me.raynes.fs :as fs]
-            [pcc.core :refer :all]))
+            [pcc.core :refer :all]
+            [midje.sweet :refer :all]))
 
-(deftest a-test
-  (testing "FIXME, I fail."
-    (is (= 0 1))))
+(println "You should expect to see one failure below.")
 
-;(-main "-h")
+(facts
+ "About miscellaneous functions"
+ (fact
+  "Returns a zero padded string representation of integer"
+  (zero-pad 1 4) => "0001"
+  (zero-pad 15111 4) => "15111"
+  (zero-pad 2 5) => "00002")
 
-(-main
-; "-t"
-; "-r"
- "-p"
-; "-u" "AlfaName"
- "-g" "On death and Dying"
- "-a" "GySgt Hathcock"
-; "-b" "42"
- "/home/alexey/dir-src1/"
- "/home/alexey/dir-dst/"
- )
-*parsed-args*
-(delete-offspring "/home/alexey/dir-dst/")
-;(fs/file ".")
-;(core/get-all-info "/home/alexey/dir-src1/12 Byzantine Rulers_ Reading Suggestions.mp3")
-;(core/get-fields "/home/alexey/common/Downloads/UpDown/Books/Audio/48 Laws Of Power - Robert Greene/48 Laws Of Power CD 6.mp3")
-;core/mp3-fields
-; "/home/alexey/dir-dst/0023-12 Byzantine Rulers_ Part 16 - Constantine XI.mp3"
-; {:track "23" :track-total "24"})
+ (fact
+  "Returns a path stripped of extension, if any"
+  (strip-file-ext "/alfa/bravo/charlie.dat") => "/alfa/bravo/charlie"
+  (strip-file-ext "/alfa/bravo/charlie") => "/alfa/bravo/charlie"
+  (strip-file-ext "/alfa/bravo/charlie/") => "/alfa/bravo/charlie"
+  (strip-file-ext "/alfa/bra.vo/charlie.dat") => "/alfa/bra.vo/charlie"))
