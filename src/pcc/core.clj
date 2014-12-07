@@ -85,7 +85,7 @@
     #(swap! x inc)))
 
 (defn strip-file-ext
-  "Discard file extension"
+  "Discards file extension"
   [s]
   (let [[_ ext] (fs/split-ext (fs/file s))]
     (apply str (drop-last (count ext) s))))
