@@ -175,8 +175,7 @@
         dir-flat-hnd  (fn [i dir-obj]
                         "Processes the current directory, source side;
                         never creates any destination directories"
-                        (let [dir (.getPath dir-obj)
-                              dir-name (fs/base-name dir-obj)]
+                        (let [dir (.getPath dir-obj)]
                           (traverse-dir dir dst-root "" ffc!)))
 
         file-tree-hnd (fn [i file-obj]
@@ -235,7 +234,7 @@
   if requested, according to the file list
   'ammo belt', set tags"
   []
-  (let [[src dst fcnt! & belt] (build-album)
+  (let [[_ _ fcnt! & belt] (build-album)
         {:keys [options]} *parsed-args*
 
         file-count (fcnt!)
