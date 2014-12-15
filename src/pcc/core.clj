@@ -206,6 +206,12 @@
 
     (doall (concat (map-indexed (dir-handler) dirs) (map-indexed (file-handler) files))))) ;; traverse-dir
 
+(defn make-initials
+  "Reduces a string of names to initials.
+  Trailing sep is not appended"
+  [name sep]
+  (string/upper-case (string/join sep (map #(str (first %)) (string/split name #"\s+")))))
+
 (defn- build-album
   "Copy source files to destination according
   to command line options"

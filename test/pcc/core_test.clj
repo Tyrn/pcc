@@ -45,3 +45,8 @@
  (cmpstr-naturally "" "") => 0
  (cmpstr-naturally "2a" "10a") => -1
  (cmpstr-naturally "alfa" "bravo") => -1)
+
+(fact
+ "Reduces a string of names to initials."
+ (make-initials "John ronald reuel Tolkien" ".") => "J.R.R.T"
+ (make-initials "e. B. Sledge" ".") => "E.B.S")
